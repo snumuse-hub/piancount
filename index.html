@@ -16146,6 +16146,9 @@ document.addEventListener('DOMContentLoaded', function(){
 .mp-stage{position:relative;width:100%;aspect-ratio:3/4;background:#020617;overflow:hidden;}
 .mp-stage video,.mp-stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
 .mp-stage.mirror video,.mp-stage.mirror canvas{transform:scaleX(-1);}
+.mp-angle-tag{position:absolute;z-index:5;transform:translate(-50%,-140%);background:rgba(15,23,42,.82);border:1px solid rgba(255,255,255,.28);color:#fff;border-radius:999px;padding:4px 7px;font-size:11px;font-weight:900;line-height:1;box-shadow:0 4px 12px rgba(0,0,0,.35);pointer-events:none;display:none;white-space:nowrap;}
+.mp-angle-tag.left{color:#bfdbfe;}
+.mp-angle-tag.right{color:#bbf7d0;}
 .mp-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:22px;background:radial-gradient(circle at 50% 15%,rgba(37,99,235,.22),transparent 38%),linear-gradient(160deg,#0f172a,#020617);z-index:3;}
 .mp-placeholder .main{font-size:20px;font-weight:900;line-height:1.25;margin-bottom:8px;}
 .mp-placeholder .sub{font-size:12px;color:#cbd5e1;line-height:1.55;margin-bottom:14px;}
@@ -16175,6 +16178,10 @@ document.addEventListener('DOMContentLoaded', function(){
 .mp-action.danger{background:#fee2e2;color:#991b1b;}
 .mp-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:100000;background:#111827;color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:10px 14px;font-size:13px;font-weight:800;box-shadow:0 8px 30px rgba(0,0,0,.35);display:none;}
 .mp-toast.show{display:block;}
+.ai-goal-popup .workout-done-card{border:2px solid rgba(34,197,94,.35)!important;}
+.ai-goal-popup .workout-done-title{font-size:22px!important;line-height:1.35!important;}
+.ai-goal-popup .workout-done-message{font-size:15px!important;line-height:1.85!important;}
+.ai-goal-popup .ai-motivation{display:inline-block;margin-top:4px;color:#15803d;font-weight:800;}
 @media(max-width:520px){.mp-lower-overlay{padding:0;align-items:stretch}.mp-lower-modal{width:100%;max-height:100vh;border-radius:0}.mp-stage{aspect-ratio:3/4}.mp-count .num{font-size:66px}.mp-side-gauge{height:190px}.mp-actions{grid-template-columns:1fr}.mp-placeholder .main{font-size:18px}}
 @media print{.mp-lower-overlay,.mp-toast,.pose-counter-badge{display:none!important;}}
 </style>
@@ -16193,6 +16200,102 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
   let landmarker=null, stream=null, rafId=0, facingMode='user', overlay=null;
   let video=null, canvas=null, ctx=null;
   let state=null;
+  let mpAudioCtx=null;
+
+  function getAudioCtx(){
+    if(!mpAudioCtx) mpAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return mpAudioCtx;
+  }
+  function prepareAudio(){
+    try{ const c=getAudioCtx(); if(c.state==='suspended') c.resume(); }catch(e){}
+  }
+  function tone(freq,start,duration,type='sine',gain=0.13){
+    try{
+      const c=getAudioCtx(); if(c.state==='suspended') c.resume();
+      const osc=c.createOscillator(); const g=c.createGain();
+      osc.type=type; osc.frequency.setValueAtTime(freq,c.currentTime+start);
+      g.gain.setValueAtTime(0.0001,c.currentTime+start);
+      g.gain.exponentialRampToValueAtTime(gain,c.currentTime+start+0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+start+duration);
+      osc.connect(g); g.connect(c.destination);
+      osc.start(c.currentTime+start); osc.stop(c.currentTime+start+duration+0.04);
+    }catch(e){}
+  }
+  function sweep(startFreq,endFreq,start,duration,type='triangle',gain=0.055){
+    try{
+      const c=getAudioCtx(); if(c.state==='suspended') c.resume();
+      const osc=c.createOscillator(); const g=c.createGain();
+      osc.type=type;
+      osc.frequency.setValueAtTime(startFreq,c.currentTime+start);
+      osc.frequency.exponentialRampToValueAtTime(endFreq,c.currentTime+start+duration);
+      g.gain.setValueAtTime(0.0001,c.currentTime+start);
+      g.gain.exponentialRampToValueAtTime(gain,c.currentTime+start+0.025);
+      g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+start+duration);
+      osc.connect(g); g.connect(c.destination);
+      osc.start(c.currentTime+start); osc.stop(c.currentTime+start+duration+0.05);
+    }catch(e){}
+  }
+  function playRepDing(){
+    // 정확한 자세 1회 인정: 2번 부드러운 딩
+    tone(659,0,0.16,'sine',0.13);
+    tone(988,0.045,0.20,'sine',0.09);
+  }
+  function playSetSuccess(){
+    // 1세트 완료: 5번 짧은 성공음
+    tone(523,0,0.11,'sine',0.12);
+    tone(659,0.08,0.13,'sine',0.12);
+    tone(784,0.17,0.17,'sine',0.11);
+  }
+  function playGoalFanfare(){
+    // 전체 목표 완료: 다이나믹 빵빠레
+    tone(523,0.00,0.14,'triangle',0.12);
+    tone(659,0.12,0.14,'triangle',0.12);
+    tone(784,0.24,0.16,'triangle',0.13);
+    tone(1046,0.38,0.22,'triangle',0.14);
+    tone(784,0.70,0.12,'sine',0.10);
+    tone(988,0.82,0.12,'sine',0.10);
+    tone(1175,0.94,0.12,'sine',0.10);
+    tone(1318,1.06,0.20,'sine',0.12);
+    tone(988,1.32,0.12,'triangle',0.10);
+    tone(1175,1.44,0.12,'triangle',0.10);
+    tone(1318,1.56,0.12,'triangle',0.11);
+    tone(1568,1.68,0.24,'triangle',0.13);
+    tone(1046,2.02,0.11,'sine',0.09);
+    tone(1318,2.13,0.11,'sine',0.10);
+    tone(1568,2.24,0.12,'sine',0.10);
+    tone(2093,2.36,0.28,'triangle',0.11);
+    sweep(392,1046,0.02,0.72,'sine',0.035);
+    sweep(523,1568,1.18,0.78,'sine',0.03);
+    tone(1760,2.70,0.07,'triangle',0.06);
+    tone(2093,2.82,0.08,'triangle',0.06);
+    tone(2349,2.96,0.09,'triangle',0.055);
+  }
+  function escapeHtml(s){return String(s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+  function getStudentDisplayName(){
+    const direct=val('fn'); if(direct) return direct;
+    try{const st=JSON.parse(sessionStorage.getItem('v8Student')||'null'); if(st&&(st.studentName||st.name)) return st.studentName||st.name;}catch(e){}
+    try{const st=JSON.parse(localStorage.getItem('v8Student')||'null'); if(st&&(st.studentName||st.name)) return st.studentName||st.name;}catch(e){}
+    try{const st=JSON.parse(localStorage.getItem('pe_student_identity')||'{}'); if(st&&(st.name||st.studentName)) return st.name||st.studentName;}catch(e){}
+    return '학생';
+  }
+  function showAIGoalPopup(studentName){
+    const old=document.getElementById('workoutDonePopup'); if(old) old.remove();
+    const pop=document.createElement('div');
+    pop.id='workoutDonePopup';
+    pop.className='workout-done-popup ai-goal-popup';
+    const safe=escapeHtml(studentName||'학생');
+    pop.innerHTML=`
+      <div class="workout-done-card">
+        <div class="workout-done-icon">🎉</div>
+        <div class="workout-done-title">${safe}님, 목표 세트와 횟수를 모두 완료했습니다.</div>
+        <div class="workout-done-message">정확한 자세 수행이 기록되었습니다.<br><span class="ai-motivation">꾸준한 노력이 더 강한 나를 만듭니다.</span></div>
+        <div class="workout-done-close-note">10초 후 자동으로 닫힙니다. 화면을 누르면 바로 닫힙니다.</div>
+      </div>`;
+    document.body.appendChild(pop);
+    const close=()=>{ if(pop && pop.parentNode) pop.remove(); };
+    pop.addEventListener('click',close);
+    setTimeout(close,10000);
+  }
 
   function toast(msg){
     let t=$('mpPoseToast');
@@ -16249,6 +16352,8 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
         <div class="mp-stage" id="mpStage">
           <video id="mpVideo" playsinline muted autoplay></video>
           <canvas id="mpCanvas"></canvas>
+          <div class="mp-angle-tag left" id="mpAngleL">왼 0°</div>
+          <div class="mp-angle-tag right" id="mpAngleR">오 0°</div>
           <div class="mp-placeholder" id="mpPlaceholder">
             <div class="main">카메라로 자세를 확인합니다</div>
             <div class="sub">전신이 화면에 들어오게 1.5~2m 떨어지고<br>옆모습 또는 약간 비스듬한 자세로 시작하세요.</div>
@@ -16291,6 +16396,7 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     if(!reps || !num('l1r')){ const el=$('l1r'); if(el){el.focus(); el.scrollIntoView({behavior:'smooth',block:'center'});} toast('세트별 개수를 먼저 입력하세요.'); return true; }
     const rest=Math.max(0,Math.floor(num('l1e') || 90));
     createOverlay();
+    prepareAudio();
     state={name, block, card:getSelectedLowerCard(), sets, target:reps, rest, setNo:1, rep:0, total:0, phase:'up', smooth:null, downOk:false, lastCount:0, history:[], accSamples:[], running:false, resting:false, restTimer:null, restRemain:0};
     $('mpTitle').textContent=(KO[name]||name)+' AI 자세 카운터';
     $('mpSub').textContent='설정한 강도: '+sets+'세트 × '+reps+'회 · 기준 동작만 자동 기록';
@@ -16343,6 +16449,7 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     cancelAnimationFrame(rafId); rafId=0; stopStreamOnly();
     if(video) video.srcObject=null;
     ctx && ctx.clearRect(0,0,canvas.width,canvas.height);
+    hideAngleTags();
     $('mpStatus') && ($('mpStatus').textContent='⏸ 카메라 중지');
     $('mpPlaceholder') && ($('mpPlaceholder').style.display='flex');
     $('mpCameraBtn') && ($('mpCameraBtn').disabled=false, $('mpCameraBtn').textContent='📷 다시 시작');
@@ -16422,14 +16529,36 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     }
     rafId=requestAnimationFrame(loop);
   }
+  function hideAngleTags(){
+    const l=$('mpAngleL'), r=$('mpAngleR');
+    if(l) l.style.display='none';
+    if(r) r.style.display='none';
+  }
+  function placeAngleTag(id, q, value){
+    const el=$(id);
+    if(!el || !q || value==null || (q.visibility!=null && q.visibility<VIS_MIN)){ if(el) el.style.display='none'; return; }
+    const xPct=(facingMode==='user') ? (100 - q.x*100) : (q.x*100);
+    el.style.left=clamp(xPct,5,95)+'%';
+    el.style.top=clamp(q.y*100,6,94)+'%';
+    el.textContent=(id==='mpAngleL'?'왼 ':'오 ')+Math.round(value)+'°';
+    el.style.display='block';
+  }
+  function updateAngleTags(lm){
+    if(!lm){hideAngleTags();return;}
+    const left=visible(p(lm,23),p(lm,25),p(lm,27)) ? angle(p(lm,23),p(lm,25),p(lm,27)) : null;
+    const right=visible(p(lm,24),p(lm,26),p(lm,28)) ? angle(p(lm,24),p(lm,26),p(lm,28)) : null;
+    placeAngleTag('mpAngleL',p(lm,25),left);
+    placeAngleTag('mpAngleR',p(lm,26),right);
+  }
   function drawPose(lm){
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    if(!lm) return;
+    if(!lm){hideAngleTags();return;}
     const W=canvas.width,H=canvas.height;
     const lines=[[11,12],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[11,13],[13,15],[12,14],[14,16]];
     ctx.lineWidth=4; ctx.strokeStyle='rgba(96,165,250,.95)'; ctx.fillStyle='rgba(34,197,94,.95)';
     lines.forEach(([a,b])=>{const A=p(lm,a),B=p(lm,b); if(visible(A,B)){ctx.beginPath();ctx.moveTo(A.x*W,A.y*H);ctx.lineTo(B.x*W,B.y*H);ctx.stroke();}});
     [11,12,23,24,25,26,27,28].forEach(i=>{const q=p(lm,i); if(q && (q.visibility==null || q.visibility>=VIS_MIN)){ctx.beginPath();ctx.arc(q.x*W,q.y*H,5,0,Math.PI*2);ctx.fill();}});
+    updateAngleTags(lm);
   }
   function processPose(lm){
     if(!lm){updateMetrics({pct:0,angle:null,label:'사람 인식 안됨',lost:true});return;}
@@ -16451,12 +16580,14 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
   function addRep(){
     state.rep += 1; state.total += 1;
     $('mpRep').textContent=state.rep; $('mpTotal').textContent=state.total;
+    playRepDing();
     toast((KO[state.name]||state.name)+' '+state.rep+'회 인정');
     if(state.rep>=state.target) finishSet();
   }
   function finishSet(){
     state.history.push(state.rep);
     if(state.setNo>=state.sets){finishAll();return;}
+    setTimeout(playSetSuccess,220);
     startRest();
   }
   function startRest(){
@@ -16498,8 +16629,10 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     }
     if(typeof window.updateMainWorkoutProgress==='function') window.updateMainWorkoutProgress();
     if(typeof window.showConfetti==='function'){try{window.showConfetti('하체 AI 평가 완료');}catch(e){}}
+    const studentName=getStudentDisplayName();
     toast('하체 수행평가 기록이 자동 반영되었습니다.');
     closeCounter(true);
+    setTimeout(()=>{playGoalFanfare(); showAIGoalPopup(studentName);},160);
   }
 
   document.addEventListener('click', function(e){
