@@ -16486,7 +16486,7 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
       ? '설정한 강도: '+sets+'세트 × '+formatClock(workSeconds)+' · 시간 동안 정확한 동작만 자동 기록'
       : '설정한 강도: '+sets+'세트 × '+reps+'회 · 기준 동작만 자동 기록';
     $('mpGuide').textContent=guideFor(name);
-    $('mpSets').textContent=sets; $('mpSet').textContent='1';
+    $('mpSets').textContent=sets; $('mpSet').textContent='1'; $('mpTarget').textContent=reps;
     $('mpRep').textContent='0'; $('mpTotal').textContent='0'; $('mpAngle').textContent='--'; $('mpPctText').textContent='0'; $('mpGauge').style.height='0%';
     $('mpPhase').textContent='자세: 카메라 대기'; $('mpStatus').textContent='📷 카메라 시작 필요';
     $('mpPlaceholder').style.display='flex'; $('mpRest').classList.remove('show');
@@ -16766,10 +16766,13 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     }
     const l1s=$('l1s'), l1r=$('l1r'), lf=$('lf1');
     if(l1s) l1s.value=state.sets;
-    if(!isTime && l1r) l1r.value=state.target;
+    // 시간 목표일 때도 제출/전교랭킹 집계가 기존 개수 필드(l1r)를 기준으로 동작하므로,
+    // 목표 횟수가 아니라 AI가 정확한 자세로 인정한 총 개수를 l1r에 저장합니다.
+    if(l1r) l1r.value = isTime ? total : state.target;
     if(lf){
       const line='[AI자세카운터] '+summary;
-      if(!lf.value.includes('[AI자세카운터]')) lf.value=(lf.value.trim()?lf.value.trim()+'\n':'')+line;
+      if(!lf.value.includes('[AI자세카운터]')) lf.value=(lf.value.trim()?lf.value.trim()+'
+':'')+line;
       else lf.value=lf.value.replace(/\[AI자세카운터\].*/g,line);
     }
     if(typeof window.updateMainWorkoutProgress==='function') window.updateMainWorkoutProgress();
