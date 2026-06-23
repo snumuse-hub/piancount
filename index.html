@@ -16641,6 +16641,18 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
   function openCounter(block){
     const name=getSelectedLowerName();
     if(!TARGETS.has(name)){return false;}
+    // 이전 AI 운동이 끝난 뒤 남아 있을 수 있는 팝업/타이머/카메라 상태를 먼저 정리합니다.
+    // 같은 하체 종목을 다시 설정해도 새 세션이 깨끗하게 시작되도록 하는 안전장치입니다.
+    document.querySelectorAll('.ai-goal-popup,.ai-partial-popup').forEach(p=>p.remove());
+    if(state){
+      try{clearWorkTimer();}catch(e){}
+      if(state.restTimer){try{clearInterval(state.restTimer);}catch(e){} state.restTimer=null;}
+      state.running=false;
+      state=null;
+    }
+    if(rafId){cancelAnimationFrame(rafId); rafId=0;}
+    try{stopStreamOnly();}catch(e){}
+    if(overlay) overlay.classList.remove('show');
     const sets=Math.max(1,Math.floor(num('l1s')));
     const goalMode=getGoalMode();
     const reps=Math.max(1,Math.floor(num('l1r')));
@@ -16657,9 +16669,13 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
       if(!reps || !num('l1r')){ const el=$('l1r'); if(el){el.focus(); el.scrollIntoView({behavior:'smooth',block:'center'});} toast('세트별 개수를 먼저 입력하세요.'); return true; }
     }
     const rest=Math.max(0,Math.floor(num('l1e') || 90));
+    const selectedCard=getSelectedLowerCard();
+    if(selectedCard) selectedCard.classList.remove('completed');
+    if(block) block.classList.remove('session-done');
+    if(typeof window.updateMainWorkoutProgress==='function') window.updateMainWorkoutProgress();
     createOverlay();
     prepareAudio();
-    state={name, block, card:getSelectedLowerCard(), goalMode, sets, target:reps, workSeconds, workRemain:workSeconds, rest, setNo:1, rep:0, total:0, phase:'up', smooth:null, downOk:false, lastCount:0, history:[], accSamples:[], running:false, resting:false, restTimer:null, workTimer:null, restRemain:0, setCompleting:false};
+    state={name, block, card:selectedCard, goalMode, sets, target:reps, workSeconds, workRemain:workSeconds, rest, setNo:1, rep:0, total:0, phase:'up', smooth:null, downOk:false, lastCount:0, history:[], accSamples:[], running:false, resting:false, restTimer:null, workTimer:null, restRemain:0, setCompleting:false, timeStarted:false};
     $('mpTitle').textContent=(KO[name]||name)+' AI 자세 카운터';
     $('mpSub').textContent = goalMode==='time'
       ? '설정한 강도: '+sets+'세트 × '+formatClock(workSeconds)+' · 시간 동안 정확한 동작만 자동 기록'
@@ -16673,6 +16689,7 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
       $('mpTargetLine').textContent='시간 목표 중 인정 횟수';
       $('mpWorkTime').style.display='block';
       $('mpWorkTime').textContent=formatClock(workSeconds);
+      $('mpPhase').textContent='자세: 첫 인정 동작부터 시간 시작';
     }else{
       $('mpTargetLine').innerHTML='/ <span id="mpTarget">'+reps+'</span>회';
       $('mpWorkTime').style.display='none';
@@ -16709,8 +16726,17 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
       video.srcObject=stream;
       await video.play();
       canvas.width=video.videoWidth || 720; canvas.height=video.videoHeight || 960;
-      $('mpPlaceholder').style.display='none'; $('mpStatus').textContent='🟢 자세 분석 중';
-      state.running=true; loop(); if(state.goalMode==='time' && !state.resting) startWorkTimer();
+      $('mpPlaceholder').style.display='none';
+      state.running=true;
+      if(state.goalMode==='time'){
+        state.timeStarted=false;
+        $('mpStatus').textContent='🟢 첫 정확한 동작을 기다리는 중';
+        $('mpPhase').textContent='자세: 첫 카운트 인정 시 시간 시작';
+        updateWorkTimerUI();
+      }else{
+        $('mpStatus').textContent='🟢 자세 분석 중';
+      }
+      loop();
     }catch(err){
       $('mpStatus').textContent='⚠ 카메라 오류';
       $('mpCameraBtn').disabled=false; $('mpCameraBtn').textContent='다시 시도';
@@ -16866,9 +16892,11 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
   }
   function startWorkTimer(){
     if(!state || state.goalMode!=='time' || state.resting || !state.running) return;
-    clearWorkTimer();
+    if(state.workTimer) return;
+    state.timeStarted=true;
     if(!(state.workRemain>0)) state.workRemain=state.workSeconds;
     updateWorkTimerUI();
+    $('mpStatus').textContent='⏱ 시간 측정 중';
     state.workTimer=setInterval(()=>{
       if(!state || state.resting || !state.running) return;
       state.workRemain -= 1;
@@ -16882,6 +16910,10 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
   function resetSetMotionState(){
     if(!state) return;
     state.rep=0; state.phase='up'; state.smooth=null; state.downOk=false; state.lastCount=0; state.setCompleting=false;
+    if(state.goalMode==='time'){
+      clearWorkTimer();
+      state.timeStarted=false;
+    }
     $('mpRep').textContent='0';
     if(state.goalMode==='time'){
       state.workRemain=state.workSeconds;
@@ -16893,7 +16925,12 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     state.rep += 1; state.total += 1;
     $('mpRep').textContent=state.rep; $('mpTotal').textContent=state.total;
     playRepDing();
-    toast((KO[state.name]||state.name)+' '+state.rep+'회 인정');
+    if(state.goalMode==='time' && !state.timeStarted){
+      toast('첫 동작 인정! 지금부터 시간이 측정됩니다.');
+      startWorkTimer();
+    }else{
+      toast((KO[state.name]||state.name)+' '+state.rep+'회 인정');
+    }
     if(state.goalMode!=='time' && state.rep>=state.target) finishSet();
   }
   function finishSet(){
@@ -16931,8 +16968,12 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     state.setNo += 1; $('mpSet').textContent=state.setNo;
     $('mpRest').classList.remove('show'); state.resting=false;
     resetSetMotionState();
-    $('mpStatus').textContent='🟢 다음 세트 분석 중';
-    if(state.goalMode==='time') startWorkTimer();
+    if(state.goalMode==='time'){
+      $('mpStatus').textContent='🟢 다음 세트: 첫 정확한 동작을 기다리는 중';
+      $('mpPhase').textContent='자세: 첫 카운트 인정 시 시간 시작';
+    }else{
+      $('mpStatus').textContent='🟢 다음 세트 분석 중';
+    }
   }
   function actualSetsForRecord(completed){
     if(!state) return 0;
