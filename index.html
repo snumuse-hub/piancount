@@ -3868,6 +3868,62 @@ body{
 <style id="unify-typography">
 body{ -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; }
 </style>
+
+<style id="v97-center-camera-intro-css-only">
+/* ===== v97: v94 카메라 로직 복구 + 문구 중앙 정렬만 CSS로 수정 =====
+   주의: MediaPipe, 카메라 시작, 정확도 계산 JavaScript는 수정하지 않음.
+*/
+#mpPlaceholder.mp-placeholder{
+  position:absolute !important;
+  inset:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  padding:0 92px 0 24px !important;
+  gap:22px !important;
+  z-index:5 !important;
+}
+
+#mpPlaceholder .main{
+  width:100% !important;
+  max-width:560px !important;
+  margin:0 auto !important;
+  text-align:center !important;
+  line-height:1.22 !important;
+  letter-spacing:-0.04em !important;
+}
+
+#mpPlaceholder .sub{
+  display:none !important;
+}
+
+#mpPlaceholder .mp-camera-btn{
+  margin:0 auto !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+
+/* 모바일에서는 오른쪽 게이지와 겹치지 않도록 중앙감은 유지하되 오른쪽 여백만 조금 둠 */
+@media(max-width:720px){
+  #mpPlaceholder.mp-placeholder{
+    padding:0 82px 0 18px !important;
+    gap:20px !important;
+  }
+  #mpPlaceholder .main{
+    font-size:clamp(27px,7vw,42px) !important;
+  }
+}
+
+@media(max-width:420px){
+  #mpPlaceholder.mp-placeholder{
+    padding:0 76px 0 14px !important;
+  }
+}
+</style>
+
 </head>
 <body class="auth-mode">
 
@@ -17018,24 +17074,21 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     }
   }
   function updateMetrics(r){
-    const rawPct = Math.max(0, Math.min(100, Number(r.pct||0)));
-    // v95: 실제 내부 점수 100은 양쪽 관절 인식·깊이·좌우 균형·몸통 안정이 모두 완벽해야 해서
-    // 모바일 실측에서는 거의 나오지 않습니다. 학생 피드백용 표시값은 95점 이상을 100%로 보정합니다.
-    const displayPct = rawPct >= 95 ? 100 : Math.round(rawPct);
-    const visualPct = displayPct;
+    const pct = Math.max(0, Math.min(100, Number(r.pct||0)));
+    const visualPct = Math.round(Math.max(0, Math.min(100, pct)));
     const pctText=$('mpPctText'), gauge=$('mpGauge'), gaugeLabel=document.querySelector('.mp-side-gauge-label');
-    if(pctText) pctText.textContent=String(displayPct);
+    if(pctText) pctText.textContent=String(Math.round(pct));
     if(gauge){
       gauge.style.height=visualPct+'%';
-      gauge.classList.toggle('high', displayPct>=100);
+      gauge.classList.toggle('high', pct>=100);
     }
     if(gaugeLabel){
-      gaugeLabel.classList.toggle('high', displayPct>=100);
-      gaugeLabel.classList.toggle('low', rawPct>0 && rawPct<70);
+      gaugeLabel.classList.toggle('high', pct>=100);
+      gaugeLabel.classList.toggle('low', pct>0 && pct<70);
     }
     $('mpAngle').textContent=r.angle==null?'--':String(r.angle);
     $('mpPhase').textContent='자세: '+(r.lost ? (r.msg||'인식 약함') : r.label);
-    $('mpStatus').textContent=r.lost ? '🟡 '+(r.msg||'인식 약함') : (rawPct>=70?'🟢 인정 가능':'🟠 자세 보정');
+    $('mpStatus').textContent=r.lost ? '🟡 '+(r.msg||'인식 약함') : (pct>=70?'🟢 인정 가능':'🟠 자세 보정');
   }
   function clearWorkTimer(){
     if(state && state.workTimer){clearInterval(state.workTimer); state.workTimer=null;}
@@ -17544,70 +17597,5 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
 }
 </style>
 <!-- V94_VALIDATION: 카메라 시작 전 안내문구 간소화, 카운트 숨김으로 버튼/0 겹침 방지, 게이지는 실제 정확도 100%에서만 100% 높이. -->
-
-
-<style id="v95-ai-placeholder-center-and-accuracy-criterion">
-/* ===== v95: 카메라 시작 안내 문구 정중앙 배치 + 100% 표시 기준 보정 ===== */
-.mp-placeholder{
-  display:flex !important;
-  flex-direction:column !important;
-  align-items:center !important;
-  justify-content:center !important;
-  text-align:center !important;
-  padding:0 !important;
-  position:absolute !important;
-}
-.mp-placeholder .main{
-  position:absolute !important;
-  left:50% !important;
-  top:42% !important;
-  transform:translate(-50%,-50%) !important;
-  width:calc(100% - 170px) !important;
-  max-width:560px !important;
-  text-align:center !important;
-  white-space:normal !important;
-  margin:0 !important;
-  z-index:6 !important;
-}
-.mp-placeholder .mp-camera-btn{
-  position:absolute !important;
-  left:50% !important;
-  top:53% !important;
-  transform:translateX(-50%) !important;
-  z-index:6 !important;
-  margin:0 !important;
-}
-.mp-side-gauge-label #mpPctText{
-  font-size:38px !important;
-}
-.mp-side-gauge-label .pct-unit{
-  font-size:24px !important;
-}
-@media(max-width:520px){
-  .mp-placeholder .main{
-    top:42% !important;
-    width:calc(100% - 118px) !important;
-    max-width:310px !important;
-    font-size:22px !important;
-    line-height:1.22 !important;
-  }
-  .mp-placeholder .mp-camera-btn{
-    top:54% !important;
-    min-width:210px !important;
-    max-width:68% !important;
-  }
-  .mp-side-gauge-label #mpPctText{
-    font-size:36px !important;
-  }
-  .mp-side-gauge-label .pct-unit{
-    font-size:22px !important;
-  }
-}
-@media(max-height:760px){
-  .mp-placeholder .main{top:40% !important;}
-  .mp-placeholder .mp-camera-btn{top:52% !important;}
-}
-</style>
-<!-- V95_VALIDATION: 시작 안내 문구/버튼을 AI 화면 중앙축에 고정, 정확도 표시 95점 이상은 학생 피드백용 100%로 보정. -->
 
 </body></html>
