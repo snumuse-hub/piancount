@@ -16130,7 +16130,7 @@ document.addEventListener('DOMContentLoaded', function(){
 </style>
 
 
-<!-- V86_VALIDATION: 기존 시작 버튼 AI 연동 유지 + 중간 기록 저장 + 카메라 안내 팝업 + 시간목표/음향/각도 유지. -->
+<!-- V88_VALIDATION: 기존 시작 버튼 AI 연동 유지 + 중간 기록 저장 + 카메라 안내 1안 + 목표방식 UI흐름/색감 유지. -->
 <!-- ===== v86: 하체 AI 수행평가 중간기록 저장 + 부드러운 카메라 안내 ===== -->
 <style id="v86-lower-mediapipe-counter-style">
 #lg .ex-item[data-pose-counter="1"]{position:relative!important;outline:2px solid rgba(37,99,235,.35)!important;outline-offset:2px!important;}
@@ -16202,6 +16202,163 @@ document.addEventListener('DOMContentLoaded', function(){
 @media(max-width:520px){.mp-lower-overlay{padding:0;align-items:stretch}.mp-lower-modal{width:100%;max-height:100vh;border-radius:0}.mp-stage{aspect-ratio:3/4}.mp-count .num{font-size:66px}.mp-side-gauge{height:190px}.mp-actions{grid-template-columns:1fr}.mp-placeholder .main{font-size:18px}}
 @media print{.mp-lower-overlay,.mp-toast,.pose-counter-badge{display:none!important;}}
 </style>
+
+<style id="v87-goal-mode-soft-ui-style">
+/* ===== v87: 목표 방식 선택 UI 흐름/색감 개선 + 카메라 안내문구 부드러운 톤 ===== */
+#mpGoalModePanel.mp-goal-mode-panel{
+  display:none;
+  margin:10px 0 10px 0 !important;
+  border:1.5px solid #f1c98a !important;
+  background:linear-gradient(135deg,#fff8ed 0%,#fffdf7 48%,#fff3dd 100%) !important;
+  color:#5f3f12 !important;
+  border-radius:16px !important;
+  padding:12px 13px !important;
+  font-family:"SUIT","Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif !important;
+  box-shadow:0 4px 14px rgba(217,154,82,.12), inset 0 1px 0 rgba(255,255,255,.85) !important;
+}
+#mpGoalModePanel.mp-goal-mode-panel.show{display:block !important;}
+#mpGoalModePanel .mp-goal-mode-title{
+  font-size:13px !important;
+  font-weight:800 !important;
+  color:#b65b19 !important;
+  margin-bottom:3px !important;
+  letter-spacing:-.02em !important;
+}
+#mpGoalModePanel .mp-goal-mode-sub{
+  font-size:11px !important;
+  color:#7a5a33 !important;
+  line-height:1.45 !important;
+  font-weight:600 !important;
+  margin-bottom:9px !important;
+  word-break:keep-all !important;
+}
+#mpGoalModePanel .mp-goal-mode-buttons{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:8px !important;
+  margin-bottom:9px !important;
+}
+#mpGoalModePanel .mp-goal-mode-buttons button{
+  position:relative !important;
+  border:1.5px solid #ead5b6 !important;
+  background:#fffaf2 !important;
+  color:#7a5a33 !important;
+  border-radius:14px !important;
+  padding:10px 8px 9px !important;
+  font-size:12px !important;
+  font-weight:800 !important;
+  cursor:pointer !important;
+  line-height:1.25 !important;
+  box-shadow:0 2px 8px rgba(138,90,0,.06) !important;
+  transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease !important;
+}
+#mpGoalModePanel .mp-goal-mode-buttons button span{
+  display:block !important;
+  font-size:13px !important;
+  font-weight:850 !important;
+  letter-spacing:-.02em !important;
+}
+#mpGoalModePanel .mp-goal-mode-buttons button small{
+  display:block !important;
+  margin-top:3px !important;
+  font-size:10px !important;
+  color:#9a7650 !important;
+  font-weight:650 !important;
+}
+#mpGoalModePanel .mp-goal-mode-buttons button.active{
+  border-color:#e67e22 !important;
+  background:linear-gradient(135deg,#ff9f43 0%,#f59e0b 100%) !important;
+  color:#fff !important;
+  box-shadow:0 6px 16px rgba(245,158,11,.28), inset 0 1px 0 rgba(255,255,255,.35) !important;
+  transform:translateY(-1px) !important;
+}
+#mpGoalModePanel .mp-goal-mode-buttons button.active small{color:rgba(255,255,255,.86) !important;}
+#mpGoalModePanel .mp-goal-mode-buttons button.active::after{
+  content:"선택됨" !important;
+  position:absolute !important;
+  right:7px !important;
+  top:7px !important;
+  border-radius:999px !important;
+  padding:2px 6px !important;
+  background:rgba(255,255,255,.22) !important;
+  color:#fff !important;
+  font-size:9px !important;
+  font-weight:800 !important;
+}
+#mpGoalModePanel .mp-time-goal-fields{
+  display:none;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:8px !important;
+  padding:9px !important;
+  border-radius:13px !important;
+  background:rgba(255,255,255,.62) !important;
+  border:1px solid #f3dfbf !important;
+}
+#mpGoalModePanel .mp-time-goal-fields.show{display:grid !important;}
+#mpGoalModePanel .mp-time-goal-fields label{
+  font-size:10.5px !important;
+  color:#7a5a33 !important;
+  font-weight:800 !important;
+}
+#mpGoalModePanel .mp-time-goal-fields input{
+  border:1px solid #e7c89b !important;
+  border-radius:10px !important;
+  background:#fff !important;
+  color:#111 !important;
+  font-weight:700 !important;
+}
+#mpGoalModePanel .mp-goal-mode-note{
+  border-radius:10px !important;
+  background:#fff6e8 !important;
+  color:#7a5a33 !important;
+  border:1px solid #f1d7ae !important;
+  padding:7px 9px !important;
+  font-size:11px !important;
+  line-height:1.5 !important;
+  font-weight:650 !important;
+}
+/* 카메라 시작 전 안내문구: 더 부드러운 말투와 둥근 느낌 */
+.mp-placeholder{
+  font-family:"SUIT","Pretendard","Apple SD Gothic Neo","Noto Sans KR",sans-serif !important;
+  background:radial-gradient(circle at 50% 13%,rgba(34,197,94,.20),transparent 36%),linear-gradient(160deg,#102018 0%,#07131f 55%,#020617 100%) !important;
+}
+.mp-placeholder .main{
+  font-size:21px !important;
+  font-weight:780 !important;
+  letter-spacing:-.04em !important;
+  line-height:1.28 !important;
+  margin-bottom:9px !important;
+  color:#f7fee7 !important;
+}
+.mp-placeholder .sub{
+  max-width:310px !important;
+  font-size:13px !important;
+  color:#d9f99d !important;
+  line-height:1.78 !important;
+  font-weight:520 !important;
+  letter-spacing:-.02em !important;
+  word-break:keep-all !important;
+  margin-bottom:16px !important;
+}
+.mp-camera-btn{
+  background:linear-gradient(135deg,#9be15d 0%,#00c853 100%) !important;
+  color:#052e16 !important;
+  border-radius:999px !important;
+  padding:13px 22px !important;
+  font-size:14px !important;
+  font-weight:850 !important;
+  box-shadow:0 8px 20px rgba(34,197,94,.28), inset 0 1px 0 rgba(255,255,255,.5) !important;
+}
+@media(max-width:520px){
+  #mpGoalModePanel.mp-goal-mode-panel{margin:9px 0 !important;padding:11px !important;}
+  #mpGoalModePanel .mp-goal-mode-buttons{gap:7px !important;}
+  #mpGoalModePanel .mp-goal-mode-buttons button{padding:10px 7px !important;}
+  .mp-placeholder .main{font-size:19px !important;}
+  .mp-placeholder .sub{font-size:12.5px !important;line-height:1.75 !important;}
+}
+</style>
+
 <script type="module" id="v86-lower-mediapipe-counter-script">
 import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
@@ -16324,9 +16481,9 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     const safe=escapeHtml(studentName||'학생');
     pop.innerHTML=`
       <div class="workout-done-card">
-        <div class="workout-done-icon">💪</div>
-        <div class="workout-done-title">운동은 시작이 반입니다.</div>
-        <div class="workout-done-message">${safe}님, 여기까지 수행한 정확한 자세 기록이 저장되었습니다.<br>오늘의 도전도 충분히 의미 있는 기록입니다.<br><span class="ai-motivation">꾸준한 노력이 더 강한 나를 만듭니다.</span></div>
+        <div class="workout-done-icon">🌱</div>
+        <div class="workout-done-title">오늘의 도전이 기록되었습니다.</div>
+        <div class="workout-done-message"><b>운동은 시작이 반입니다.</b><br><br>${safe}님, 여기까지 수행한 정확한 자세 기록이 저장되었습니다.<br>오늘의 도전도 충분히 의미 있는 기록입니다.<br><span class="ai-motivation">꾸준한 노력이 더 강한 나를 만듭니다.</span></div>
         <div class="workout-done-close-note">10초 후 자동으로 닫힙니다. 화면을 누르면 바로 닫힙니다.</div>
       </div>`;
     document.body.appendChild(pop);
@@ -16386,18 +16543,19 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     panel.className='mp-goal-mode-panel';
     panel.dataset.mode='count';
     panel.innerHTML=`
-      <div class="mp-goal-mode-title">하체 AI 수행평가 목표 방식</div>
+      <div class="mp-goal-mode-title">🎯 목표 방식 선택</div>
+      <div class="mp-goal-mode-sub">하체 수행평가 3종목은 횟수 목표와 시간 목표 중 선택할 수 있습니다.</div>
       <div class="mp-goal-mode-buttons">
-        <button type="button" data-mp-goal-mode="count" class="active">횟수 목표</button>
-        <button type="button" data-mp-goal-mode="time">시간 목표</button>
+        <button type="button" data-mp-goal-mode="count" class="active"><span>횟수 목표</span><small>정해진 개수 달성</small></button>
+        <button type="button" data-mp-goal-mode="time"><span>시간 목표</span><small>정해진 시간 동안 수행</small></button>
       </div>
       <div class="mp-time-goal-fields" id="mpTimeGoalFields">
         <div><label for="l1tm">세트당 운동 시간(분)</label><input id="l1tm" type="number" min="0" max="59" value="1" inputmode="numeric"></div>
         <div><label for="l1ts">세트당 운동 시간(초)</label><input id="l1ts" type="number" min="0" max="59" value="0" inputmode="numeric"></div>
       </div>
       <div class="mp-goal-mode-note" id="mpGoalModeNote">횟수 목표는 기존처럼 세트당 횟수에 도달하면 세트가 완료됩니다.</div>`;
-    const startBtn=block.querySelector('.session-start-btn');
-    if(startBtn && startBtn.parentNode) startBtn.parentNode.insertBefore(panel,startBtn);
+    // v87: 목표 방식 선택은 운동 설정 흐름상 세트/개수/무게/휴식 입력칸보다 위에 배치합니다.
+    if(block.parentNode) block.parentNode.insertBefore(panel, block);
     else block.appendChild(panel);
     panel.querySelectorAll('[data-mp-goal-mode]').forEach(btn=>{
       btn.addEventListener('click',()=>setGoalMode(btn.dataset.mpGoalMode));
