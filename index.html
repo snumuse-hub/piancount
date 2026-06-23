@@ -16734,11 +16734,11 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
           <div class="mp-angle-tag right" id="mpAngleR">오 0°</div>
           <div class="mp-placeholder" id="mpPlaceholder">
             <div class="main">📷 AI 자세 측정을 시작합니다</div>
-            <div class="sub">정확한 자세를 인식하기 위해 카메라 사용이 필요합니다.<br>카메라 영상은 자세 분석에만 사용되며, 별도로 저장되지 않습니다.<br><br>화면에 전신이 잘 보이도록 서 주세요.<br>준비가 되면 카메라를 허용해 주세요.</div>
+            <div class="sub" aria-hidden="true"></div>
             <button type="button" class="mp-camera-btn" id="mpCameraBtn">카메라 시작하기</button>
           </div>
           <div class="mp-overlay-top"><span class="mp-pill" id="mpStatus">⚪ 준비 중</span><span class="mp-pill" id="mpPhase">자세: -</span><button type="button" class="mp-flip" id="mpFlipBtn">카메라 전환</button></div>
-          <div class="mp-count"><div class="num"><span id="mpRep">0</span></div><div class="target" id="mpTargetLine">/ <span id="mpTarget">0</span>회</div><div class="mp-work-time" id="mpWorkTime" style="display:none;">00:00</div></div>
+          <div class="mp-count" id="mpCountBox"><div class="num"><span id="mpRep">0</span></div><div class="target" id="mpTargetLine">/ <span id="mpTarget">0</span>회</div><div class="mp-work-time" id="mpWorkTime" style="display:none;">00:00</div></div>
           <div class="mp-side-gauge-label">정확도 <span id="mpPctText">0</span><span class="pct-unit">%</span></div><div class="mp-side-gauge"><div class="mp-side-gauge-fill" id="mpGauge"></div></div>
           <div class="mp-rest" id="mpRest"><div style="font-size:15px;color:#cbd5e1;">세트 사이 휴식</div><div class="rest-num" id="mpRestNum">90</div><button type="button" class="mp-rest-skip" id="mpRestSkipBtn">휴식 넘어가기</button><div style="font-size:13px;color:#cbd5e1;">끝나면 다음 세트가 자동 시작됩니다.</div></div>
         </div>
@@ -16814,8 +16814,9 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     $('mpGuide').textContent=guideFor(name);
     $('mpSets').textContent=sets; $('mpSet').textContent='1'; $('mpTarget').textContent=reps;
     $('mpRep').textContent='0'; $('mpTotal').textContent='0'; $('mpAngle').textContent='--'; $('mpPctText').textContent='0'; $('mpGauge').style.height='0%';
+    $('mpGauge').classList.remove('high'); const gaugeLabel0=document.querySelector('.mp-side-gauge-label'); if(gaugeLabel0){gaugeLabel0.classList.remove('high','low');}
     $('mpPhase').textContent='자세: 카메라 대기'; $('mpStatus').textContent='📷 카메라 안내 확인';
-    $('mpPlaceholder').style.display='flex'; $('mpRest').classList.remove('show');
+    $('mpPlaceholder').style.display='flex'; const countBox0=$('mpCountBox'); if(countBox0) countBox0.style.display='none'; $('mpRest').classList.remove('show');
     if(goalMode==='time'){
       $('mpTargetLine').textContent='시간 목표 중 인정 횟수';
       $('mpWorkTime').style.display='block';
@@ -16858,6 +16859,7 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
       await video.play();
       canvas.width=video.videoWidth || 720; canvas.height=video.videoHeight || 960;
       $('mpPlaceholder').style.display='none';
+      const countBox=$('mpCountBox'); if(countBox) countBox.style.display='block';
       state.running=true;
       if(state.goalMode==='time'){
         state.timeStarted=false;
@@ -16889,6 +16891,7 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     hideAngleTags();
     $('mpStatus') && ($('mpStatus').textContent='⏸ 카메라 중지');
     $('mpPlaceholder') && ($('mpPlaceholder').style.display='flex');
+    $('mpCountBox') && ($('mpCountBox').style.display='none');
     $('mpCameraBtn') && ($('mpCameraBtn').disabled=false, $('mpCameraBtn').textContent='카메라 다시 시작하기');
   }
   function closeCounter(completed){
@@ -17016,15 +17019,15 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
   }
   function updateMetrics(r){
     const pct = Math.max(0, Math.min(100, Number(r.pct||0)));
-    const visualPct = pct >= 90 ? 100 : Math.round(Math.max(0, Math.min(100, pct / 90 * 100)));
+    const visualPct = Math.round(Math.max(0, Math.min(100, pct)));
     const pctText=$('mpPctText'), gauge=$('mpGauge'), gaugeLabel=document.querySelector('.mp-side-gauge-label');
     if(pctText) pctText.textContent=String(Math.round(pct));
     if(gauge){
       gauge.style.height=visualPct+'%';
-      gauge.classList.toggle('high', pct>=90);
+      gauge.classList.toggle('high', pct>=100);
     }
     if(gaugeLabel){
-      gaugeLabel.classList.toggle('high', pct>=90);
+      gaugeLabel.classList.toggle('high', pct>=100);
       gaugeLabel.classList.toggle('low', pct>0 && pct<70);
     }
     $('mpAngle').textContent=r.angle==null?'--':String(r.angle);
@@ -17208,7 +17211,7 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     if(selected && selected!==card){
       selected.classList.remove('sel','completed');
       const chip=selected.querySelector('.completion-chip'); if(chip) chip.remove();
-      try{ if(typeof sel!=='undefined' && Array.isArray(sel.l)) sel.l.length=0; }catch(_e){}
+      if(Array.isArray(window.sel?.l)) window.sel.l.length=0;
     }
   }, true);
 })();
@@ -17408,5 +17411,135 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
 }
 </style>
 <!-- V92_VALIDATION: 정확도 박스 테두리 제거, 정확도 0% 한 줄 표시, 게이지 위 배치, 90% 이상 시 게이지 100% 채움 CSS 보강. -->
+
+
+<style id="v94-ai-stage-gauge-placeholder-fix">
+/* ===== v94: AI 화면 안내 간소화 + 카운트 겹침 방지 + 정확도 게이지 100% 기준 ===== */
+.mp-placeholder{
+  justify-content:center !important;
+  padding:26px 34px 170px !important;
+  background:radial-gradient(circle at 50% 18%,rgba(34,197,94,.18),transparent 42%),linear-gradient(160deg,#07141c,#020617) !important;
+}
+.mp-placeholder .main{
+  font-size:24px !important;
+  line-height:1.25 !important;
+  font-weight:900 !important;
+  letter-spacing:-.045em !important;
+  margin-bottom:24px !important;
+  color:#f8fafc !important;
+  text-shadow:0 3px 16px rgba(0,0,0,.52) !important;
+}
+.mp-placeholder .sub{
+  display:none !important;
+}
+.mp-camera-btn{
+  min-width:260px !important;
+  max-width:86% !important;
+  padding:16px 26px !important;
+  border-radius:999px !important;
+  font-size:17px !important;
+  font-weight:900 !important;
+  letter-spacing:-.035em !important;
+  background:linear-gradient(135deg,#9be96f,#16d867) !important;
+  color:#08220e !important;
+  box-shadow:0 10px 28px rgba(34,197,94,.38) !important;
+}
+.mp-count{
+  bottom:60px !important;
+}
+.mp-side-gauge{
+  right:22px !important;
+  top:calc(50% + 20px) !important;
+  width:46px !important;
+  height:330px !important;
+  border-radius:999px !important;
+  background:rgba(15,23,42,.76) !important;
+  border:2px solid rgba(148,163,184,.28) !important;
+  box-shadow:0 10px 28px rgba(0,0,0,.48), inset 0 0 0 1px rgba(255,255,255,.08) !important;
+}
+.mp-side-gauge-fill{
+  height:0%;
+  border-radius:999px !important;
+  background:linear-gradient(0deg,#22c55e 0%,#65d66f 64%,#facc15 86%,#f97316 100%) !important;
+  transition:height .14s ease-out, filter .14s ease-out, box-shadow .14s ease-out !important;
+}
+.mp-side-gauge-fill.high{
+  filter:brightness(1.16) saturate(1.12) !important;
+  box-shadow:0 0 24px rgba(34,197,94,.72),0 -8px 22px rgba(250,204,21,.34) !important;
+}
+.mp-side-gauge-label{
+  right:-2px !important;
+  top:calc(50% - 174px) !important;
+  min-width:104px !important;
+  padding:0 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  font-size:14px !important;
+  font-weight:950 !important;
+  line-height:1 !important;
+  letter-spacing:-.035em !important;
+  color:#f8fafc !important;
+  text-shadow:0 3px 9px rgba(0,0,0,.75) !important;
+  white-space:nowrap !important;
+  text-align:center !important;
+}
+.mp-side-gauge-label #mpPctText{
+  display:inline !important;
+  margin-left:6px !important;
+  font-size:34px !important;
+  line-height:1 !important;
+  font-weight:950 !important;
+  color:#22c55e !important;
+  text-shadow:0 0 16px rgba(34,197,94,.62),0 3px 9px rgba(0,0,0,.78) !important;
+}
+.mp-side-gauge-label .pct-unit{
+  display:inline !important;
+  margin-left:1px !important;
+  font-size:22px !important;
+  font-weight:950 !important;
+  color:#bbf7d0 !important;
+}
+@media(max-width:520px){
+  .mp-placeholder{
+    padding:24px 24px 185px !important;
+  }
+  .mp-placeholder .main{
+    font-size:23px !important;
+    margin-bottom:22px !important;
+  }
+  .mp-camera-btn{
+    min-width:230px !important;
+    padding:15px 22px !important;
+    font-size:16px !important;
+  }
+  .mp-count{
+    bottom:54px !important;
+  }
+  .mp-side-gauge{
+    right:18px !important;
+    top:calc(50% + 22px) !important;
+    width:42px !important;
+    height:300px !important;
+  }
+  .mp-side-gauge-label{
+    right:-8px !important;
+    top:calc(50% - 158px) !important;
+    min-width:104px !important;
+    font-size:13px !important;
+  }
+  .mp-side-gauge-label #mpPctText{
+    font-size:32px !important;
+  }
+  .mp-side-gauge-label .pct-unit{
+    font-size:20px !important;
+  }
+}
+@media(max-height:760px){
+  .mp-side-gauge{height:260px !important;}
+  .mp-side-gauge-label{top:calc(50% - 142px) !important;}
+}
+</style>
+<!-- V94_VALIDATION: 카메라 시작 전 안내문구 간소화, 카운트 숨김으로 버튼/0 겹침 방지, 게이지는 실제 정확도 100%에서만 100% 높이. -->
 
 </body></html>
