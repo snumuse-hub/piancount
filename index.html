@@ -4279,7 +4279,11 @@ body{ -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; tex
             <div class="f rest-select-field"><label>휴식</label><select id="l1e"><option value="90" selected>1분 30초</option><option value="120">2분</option></select></div>
             
           </div>
-          <div class="feel-area" style="margin-top:6px;"><label>운동후 느낀점</label><textarea id="lf1" placeholder="느낀점 작성"></textarea></div>
+          <div class="feel-area lower-ai-feel-area" style="margin-top:10px;">
+            <label>운동후 느낀점 <span class="lower-feel-label-badge">학생 직접 작성</span></label>
+            <textarea id="lf1" placeholder="오늘 운동하면서 느낀 점을 직접 작성하세요."></textarea>
+            <div class="lower-feel-hint">※ AI 기록 요약은 아래 별도 박스에 표시되고, 이 느낀점 칸에는 자동 입력되지 않습니다.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -16130,7 +16134,85 @@ document.addEventListener('DOMContentLoaded', function(){
 </style>
 
 
-<!-- V88_VALIDATION: 기존 시작 버튼 AI 연동 유지 + 중간 기록 저장 + 카메라 안내 1안 + 목표방식 UI흐름/색감 유지. -->
+
+
+<style id="v90-restart-accuracy-ui-style">
+/* ===== v90: 시간목표 완료 후 재시작 보강 + 정확도 게이지 시각 강화 ===== */
+.mp-side-gauge{
+  right:14px !important;
+  width:54px !important;
+  height:272px !important;
+  border-radius:999px !important;
+  background:rgba(15,23,42,.80) !important;
+  border:2px solid rgba(255,255,255,.24) !important;
+  box-shadow:0 8px 24px rgba(0,0,0,.42), inset 0 0 0 1px rgba(255,255,255,.08) !important;
+}
+.mp-side-gauge-fill{
+  width:100% !important;
+  min-height:0 !important;
+  border-radius:999px !important;
+  background:linear-gradient(0deg,#22c55e 0%,#65d66f 58%,#facc15 78%,#f97316 100%) !important;
+  box-shadow:0 -6px 18px rgba(34,197,94,.42) !important;
+  transition:height .16s ease-out, filter .16s ease-out !important;
+}
+.mp-side-gauge-fill.high{
+  filter:brightness(1.18) saturate(1.15) !important;
+  box-shadow:0 0 22px rgba(34,197,94,.72),0 -8px 22px rgba(250,204,21,.36) !important;
+}
+.mp-side-gauge-label{
+  right:10px !important;
+  top:calc(50% - 182px) !important;
+  min-width:72px !important;
+  text-align:center !important;
+  border-radius:16px !important;
+  padding:8px 9px 7px !important;
+  background:rgba(2,6,23,.82) !important;
+  border:1px solid rgba(255,255,255,.30) !important;
+  box-shadow:0 8px 22px rgba(0,0,0,.38) !important;
+  font-size:11px !important;
+  line-height:1.15 !important;
+  letter-spacing:-.02em !important;
+}
+.mp-side-gauge-label #mpPctText{
+  display:block !important;
+  margin-top:2px !important;
+  font-size:28px !important;
+  line-height:1 !important;
+  font-weight:950 !important;
+  color:#22c55e !important;
+  text-shadow:0 0 14px rgba(34,197,94,.55) !important;
+}
+.mp-side-gauge-label .pct-unit{
+  display:inline-block !important;
+  margin-left:1px !important;
+  font-size:15px !important;
+  font-weight:900 !important;
+  color:#bbf7d0 !important;
+}
+.mp-side-gauge-label.high #mpPctText{color:#86efac !important;}
+.mp-side-gauge-label.low #mpPctText{color:#fbbf24 !important;text-shadow:0 0 12px rgba(251,191,36,.40) !important;}
+.ai-goal-next-btn{
+  margin-top:14px !important;
+  width:100% !important;
+  border:0 !important;
+  border-radius:14px !important;
+  padding:12px 14px !important;
+  background:linear-gradient(135deg,#22c55e,#16a34a) !important;
+  color:#052e16 !important;
+  font-size:14px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+  box-shadow:0 8px 18px rgba(34,197,94,.24) !important;
+}
+.ai-goal-next-btn:active{transform:scale(.98) !important;}
+@media(max-width:520px){
+  .mp-side-gauge{width:50px !important;height:238px !important;right:10px !important;}
+  .mp-side-gauge-label{top:calc(50% - 163px) !important;right:7px !important;min-width:68px !important;}
+  .mp-side-gauge-label #mpPctText{font-size:25px !important;}
+}
+</style>
+
+<!-- V90_VALIDATION: 시간목표 완료 후 다음 운동 재시작 보강 + 정확도 UI 확대 + 90% 이상 게이지 풀 표시. -->
 <!-- ===== v86: 하체 AI 수행평가 중간기록 저장 + 부드러운 카메라 안내 ===== -->
 <style id="v86-lower-mediapipe-counter-style">
 #lg .ex-item[data-pose-counter="1"]{position:relative!important;outline:2px solid rgba(37,99,235,.35)!important;outline-offset:2px!important;}
@@ -16465,12 +16547,17 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
         <div class="workout-done-icon">🎉</div>
         <div class="workout-done-title">${safe}님, 목표 세트와 ${targetWord}를 모두 완료했습니다.</div>
         <div class="workout-done-message">정확한 자세 수행이 기록되었습니다.<br><span class="ai-motivation">꾸준한 노력이 더 강한 나를 만듭니다.</span></div>
-        <div class="workout-done-close-note">10초 후 자동으로 닫힙니다. 화면을 누르면 바로 닫힙니다.</div>
+        <button type="button" class="ai-goal-next-btn">다음 운동 설정하기</button>
+        <div class="workout-done-close-note">버튼을 누르거나 화면을 누르면 바로 닫힙니다.</div>
       </div>`;
     document.body.appendChild(pop);
-    const close=()=>{ if(pop && pop.parentNode) pop.remove(); };
+    const close=()=>{
+      if(pop && pop.parentNode) pop.remove();
+      try{resetAfterAIComplete();}catch(e){}
+    };
+    pop.querySelector('.ai-goal-next-btn')?.addEventListener('click',(ev)=>{ev.preventDefault();ev.stopPropagation();close();});
     pop.addEventListener('click',close);
-    setTimeout(close,10000);
+    setTimeout(close,6500);
   }
 
   function showAIPartialPopup(studentName){
@@ -16490,6 +16577,47 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     const close=()=>{ if(pop && pop.parentNode) pop.remove(); };
     pop.addEventListener('click',close);
     setTimeout(close,10000);
+  }
+
+
+  function removeAIOverlayElements(){
+    try{
+      document.querySelectorAll('#mpLowerOverlay,.mp-lower-overlay').forEach(el=>el.remove());
+    }catch(e){}
+    overlay=null; video=null; canvas=null; ctx=null;
+  }
+
+  function unlockLowerStartUI(){
+    const block=findLowerBlock();
+    if(block) block.classList.remove('session-done','session-locked','is-disabled');
+    const btn=block && block.querySelector('.session-start-btn');
+    if(btn){
+      btn.disabled=false;
+      btn.removeAttribute('disabled');
+      btn.style.pointerEvents='auto';
+      const name=getSelectedLowerName();
+      if(name) btn.textContent='▶ '+(KO[name]||name)+' 시작';
+    }
+  }
+
+  function resetAfterAIComplete(){
+    // 한 번 하체 AI 운동을 완료한 뒤에도 로그인/새로고침 없이 바로 다시 측정할 수 있도록
+    // 카메라·타이머·RAF·휴식 레이어·이전 팝업을 모두 정리하고, 다음 시작 때는 새 오버레이를 다시 생성합니다.
+    try{clearWorkTimer();}catch(e){}
+    if(state && state.restTimer){try{clearInterval(state.restTimer);}catch(e){} state.restTimer=null;}
+    if(rafId){try{cancelAnimationFrame(rafId);}catch(e){} rafId=0;}
+    try{stopStreamOnly();}catch(e){}
+    try{ if(video) video.srcObject=null; }catch(e){}
+    try{ document.querySelectorAll('.mp-toast').forEach(t=>t.classList.remove('show')); }catch(e){}
+    state=null;
+    removeAIOverlayElements();
+    unlockLowerStartUI();
+    setTimeout(()=>{
+      unlockLowerStartUI();
+      try{ if(typeof window.updateMainWorkoutProgress==='function') window.updateMainWorkoutProgress(); }catch(e){}
+      try{ if(typeof window.refreshWorkoutSessionButtons==='function') window.refreshWorkoutSessionButtons(); }catch(e){}
+      unlockLowerStartUI();
+    },0);
   }
 
   function toast(msg){
@@ -16611,7 +16739,7 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
           </div>
           <div class="mp-overlay-top"><span class="mp-pill" id="mpStatus">⚪ 준비 중</span><span class="mp-pill" id="mpPhase">자세: -</span><button type="button" class="mp-flip" id="mpFlipBtn">카메라 전환</button></div>
           <div class="mp-count"><div class="num"><span id="mpRep">0</span></div><div class="target" id="mpTargetLine">/ <span id="mpTarget">0</span>회</div><div class="mp-work-time" id="mpWorkTime" style="display:none;">00:00</div></div>
-          <div class="mp-side-gauge-label">정확도 <span id="mpPctText">0</span>%</div><div class="mp-side-gauge"><div class="mp-side-gauge-fill" id="mpGauge"></div></div>
+          <div class="mp-side-gauge-label">정확도 <span id="mpPctText">0</span><span class="pct-unit">%</span></div><div class="mp-side-gauge"><div class="mp-side-gauge-fill" id="mpGauge"></div></div>
           <div class="mp-rest" id="mpRest"><div style="font-size:15px;color:#cbd5e1;">세트 사이 휴식</div><div class="rest-num" id="mpRestNum">90</div><button type="button" class="mp-rest-skip" id="mpRestSkipBtn">휴식 넘어가기</button><div style="font-size:13px;color:#cbd5e1;">끝나면 다음 세트가 자동 시작됩니다.</div></div>
         </div>
         <div class="mp-body">
@@ -16643,16 +16771,19 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     if(!TARGETS.has(name)){return false;}
     // 이전 AI 운동이 끝난 뒤 남아 있을 수 있는 팝업/타이머/카메라 상태를 먼저 정리합니다.
     // 같은 하체 종목을 다시 설정해도 새 세션이 깨끗하게 시작되도록 하는 안전장치입니다.
-    document.querySelectorAll('.ai-goal-popup,.ai-partial-popup').forEach(p=>p.remove());
-    if(state){
-      try{clearWorkTimer();}catch(e){}
-      if(state.restTimer){try{clearInterval(state.restTimer);}catch(e){} state.restTimer=null;}
-      state.running=false;
-      state=null;
+    document.querySelectorAll('.ai-goal-popup,.ai-partial-popup,#workoutDonePopup').forEach(p=>p.remove());
+    try{resetAfterAIComplete();}catch(e){
+      if(state){
+        try{clearWorkTimer();}catch(_e){}
+        if(state.restTimer){try{clearInterval(state.restTimer);}catch(_e){} state.restTimer=null;}
+        state.running=false;
+        state=null;
+      }
+      if(rafId){cancelAnimationFrame(rafId); rafId=0;}
+      try{stopStreamOnly();}catch(_e){}
+      try{removeAIOverlayElements();}catch(_e){ if(overlay) overlay.classList.remove('show'); }
     }
-    if(rafId){cancelAnimationFrame(rafId); rafId=0;}
-    try{stopStreamOnly();}catch(e){}
-    if(overlay) overlay.classList.remove('show');
+    unlockLowerStartUI();
     const sets=Math.max(1,Math.floor(num('l1s')));
     const goalMode=getGoalMode();
     const reps=Math.max(1,Math.floor(num('l1r')));
@@ -16763,8 +16894,14 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
   function closeCounter(completed){
     if(state && state.restTimer){clearInterval(state.restTimer); state.restTimer=null;}
     stopCamera();
-    overlay && overlay.classList.remove('show');
-    if(!completed) toast('AI 카운터가 종료되었습니다. 완료 처리는 되지 않았습니다.');
+    if(overlay) overlay.classList.remove('show');
+    if(completed){
+      // 완료/중간저장 후에는 다음 하체 측정을 바로 시작할 수 있게 팝업 DOM 자체를 제거합니다.
+      removeAIOverlayElements();
+      unlockLowerStartUI();
+    }else{
+      toast('AI 카운터가 종료되었습니다. 완료 처리는 되지 않았습니다.');
+    }
     state=null;
   }
 
@@ -16878,10 +17015,21 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     }
   }
   function updateMetrics(r){
-    $('mpPctText').textContent=String(r.pct||0); $('mpGauge').style.height=(r.pct||0)+'%';
+    const pct = Math.max(0, Math.min(100, Number(r.pct||0)));
+    const visualPct = pct >= 90 ? 100 : Math.round(Math.max(0, Math.min(100, pct / 90 * 100)));
+    const pctText=$('mpPctText'), gauge=$('mpGauge'), gaugeLabel=document.querySelector('.mp-side-gauge-label');
+    if(pctText) pctText.textContent=String(Math.round(pct));
+    if(gauge){
+      gauge.style.height=visualPct+'%';
+      gauge.classList.toggle('high', pct>=90);
+    }
+    if(gaugeLabel){
+      gaugeLabel.classList.toggle('high', pct>=90);
+      gaugeLabel.classList.toggle('low', pct>0 && pct<70);
+    }
     $('mpAngle').textContent=r.angle==null?'--':String(r.angle);
     $('mpPhase').textContent='자세: '+(r.lost ? (r.msg||'인식 약함') : r.label);
-    $('mpStatus').textContent=r.lost ? '🟡 '+(r.msg||'인식 약함') : (r.pct>=70?'🟢 인정 가능':'🟠 자세 보정');
+    $('mpStatus').textContent=r.lost ? '🟡 '+(r.msg||'인식 약함') : (pct>=70?'🟢 인정 가능':'🟠 자세 보정');
   }
   function clearWorkTimer(){
     if(state && state.workTimer){clearInterval(state.workTimer); state.workTimer=null;}
@@ -17008,11 +17156,11 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     if(l1s) l1s.value = completed ? state.sets : 1;
     // 중간 저장 또는 시간 목표는 목표 개수가 아니라 실제 인정 총개수를 기록값으로 남깁니다.
     if(l1r) l1r.value = (completed && !isTime) ? state.target : total;
+    // v91: 느낀점은 학생이 직접 작성하는 칸이므로 AI 요약을 자동 입력하지 않습니다.
+    // 이전 버전에서 들어간 AI 요약 줄이 남아 있으면 제거하고, 요약은 .pose-completed-note 별도 박스에만 표시합니다.
     if(lf){
-      const tag=completed?'[AI자세카운터]':'[AI자세카운터-중간저장]';
-      const line=tag+' '+summary;
-      if(!/\[AI자세카운터(?:-중간저장)?\]/.test(lf.value)) lf.value=(lf.value.trim()?lf.value.trim()+'\n':'')+line;
-      else lf.value=lf.value.replace(/\[AI자세카운터(?:-중간저장)?\].*/g,line);
+      const cleaned = lf.value.split('\n').filter(line=>!/^[\s]*\[AI자세카운터(?:-중간저장)?\]/.test(line)).join('\n').trim();
+      if(cleaned !== lf.value.trim()) lf.value = cleaned;
     }
     if(typeof window.updateMainWorkoutProgress==='function') window.updateMainWorkoutProgress();
     if(typeof window.showConfetti==='function'){try{window.showConfetti(completed?'하체 AI 평가 완료':'하체 AI 중간 기록 저장');}catch(e){}}
@@ -17050,8 +17198,215 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
 
   window.addEventListener('load', ()=>{decorateCards(); setTimeout(decorateCards,300); setTimeout(decorateCards,800); setTimeout(decorateCards,1600); setTimeout(decorateCards,3000);});
   document.addEventListener('DOMContentLoaded', decorateCards);
-  document.addEventListener('click', function(e){ if(e.target.closest && e.target.closest('#lg .ex-item')) setTimeout(updateGoalModePanelVisibility,0); }, true);
+  document.addEventListener('click', function(e){ if(e.target.closest && e.target.closest('#lg .ex-item')) setTimeout(()=>{ updateGoalModePanelVisibility(); const block=findLowerBlock(); if(block) block.classList.remove('session-done'); unlockLowerStartUI(); },0); }, true);
+
+  // 하체는 1개만 선택되므로, 완료 후 다른 하체 운동을 바로 누르면 기존 선택을 해제하고 새 운동으로 교체되게 보강합니다.
+  document.addEventListener('click', function(e){
+    const card=e.target.closest && e.target.closest('#lg .ex-item');
+    if(!card || card.classList.contains('sel')) return;
+    const selected=document.querySelector('#lg .ex-item.sel');
+    if(selected && selected!==card){
+      selected.classList.remove('sel','completed');
+      const chip=selected.querySelector('.completion-chip'); if(chip) chip.remove();
+      try{ if(typeof sel!=='undefined' && Array.isArray(sel.l)) sel.l.length=0; }catch(_e){}
+    }
+  }, true);
 })();
 </script>
+
+
+
+<style id="v91-lower-feel-ai-summary-style">
+/* ===== v91: 하체 느낀점 직접작성칸 강조 + AI 요약 별도 표시 ===== */
+.lower-ai-feel-area{
+  margin-top:12px !important;
+  padding:12px 12px 13px !important;
+  border:2px solid rgba(245,197,93,.95) !important;
+  border-radius:18px !important;
+  background:linear-gradient(135deg,rgba(255,248,225,.13),rgba(245,158,11,.07)) !important;
+  box-shadow:0 0 0 4px rgba(245,197,93,.08),0 10px 22px rgba(0,0,0,.16) !important;
+}
+.lower-ai-feel-area label{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:8px !important;
+  margin-bottom:9px !important;
+  color:#ffd166 !important;
+  font-size:14px !important;
+  font-weight:900 !important;
+  letter-spacing:-.02em !important;
+}
+.lower-ai-feel-area label::before{content:'✍️';margin-right:4px;}
+.lower-feel-label-badge{
+  flex:0 0 auto !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  border:1px solid rgba(255,209,102,.7) !important;
+  background:rgba(255,209,102,.14) !important;
+  color:#ffe8a3 !important;
+  border-radius:999px !important;
+  padding:4px 8px !important;
+  font-size:10.5px !important;
+  font-weight:900 !important;
+  line-height:1 !important;
+}
+#lf1{
+  min-height:82px !important;
+  border:2px solid #f6c453 !important;
+  background:rgba(255,255,255,.075) !important;
+  color:#fffaf0 !important;
+  border-radius:14px !important;
+  padding:13px 14px !important;
+  font-size:14.5px !important;
+  line-height:1.55 !important;
+  font-weight:700 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 3px rgba(246,196,83,.08) !important;
+}
+#lf1::placeholder{color:rgba(255,226,154,.9) !important;font-weight:800 !important;}
+#lf1:focus{
+  outline:none !important;
+  border-color:#ffd54a !important;
+  background:rgba(255,250,235,.11) !important;
+  box-shadow:0 0 0 4px rgba(255,213,74,.20), inset 0 1px 0 rgba(255,255,255,.12) !important;
+}
+.lower-feel-hint{
+  margin-top:7px !important;
+  color:rgba(255,241,194,.86) !important;
+  font-size:11.5px !important;
+  line-height:1.55 !important;
+  font-weight:700 !important;
+  word-break:keep-all !important;
+}
+.pose-completed-note{
+  margin-top:12px !important;
+  border:2px solid #f5c542 !important;
+  background:linear-gradient(135deg,#fff8d9 0%,#fffdf2 55%,#fff1bf 100%) !important;
+  color:#3a2900 !important;
+  border-radius:16px !important;
+  padding:12px 13px !important;
+  font-size:13px !important;
+  line-height:1.65 !important;
+  font-weight:850 !important;
+  box-shadow:0 6px 16px rgba(245,197,66,.20), inset 0 1px 0 rgba(255,255,255,.8) !important;
+  word-break:keep-all !important;
+}
+.pose-completed-note::before{
+  content:'📌 AI 기록 요약';
+  display:block !important;
+  margin-bottom:5px !important;
+  color:#9a5b00 !important;
+  font-size:12px !important;
+  font-weight:950 !important;
+}
+@media(max-width:520px){
+  .lower-ai-feel-area{padding:11px !important;border-radius:16px !important;}
+  .lower-ai-feel-area label{font-size:13.5px !important;}
+  #lf1{min-height:88px !important;font-size:14px !important;}
+  .pose-completed-note{font-size:12.5px !important;}
+}
+</style>
+<!-- V91_VALIDATION: 느낀점 직접작성칸 금색 강조, AI 기록요약은 별도 박스 표시, 느낀점 자동입력 제거. -->
+
+
+
+<style id="v92-accuracy-gauge-clean-ui">
+/* ===== v92: 정확도 표시/게이지 UI 정리 =====
+   - 정확도 박스 테두리 제거
+   - '정확도 0%' 한 줄 표시
+   - 게이지 바로 위에 위치
+   - 90% 이상일 때 게이지가 끝까지 차 보이도록 강조
+*/
+.mp-side-gauge{
+  right:24px !important;
+  top:calc(50% + 12px) !important;
+  width:44px !important;
+  height:242px !important;
+  border-radius:999px !important;
+  background:rgba(15,23,42,.72) !important;
+  border:1px solid rgba(255,255,255,.22) !important;
+  box-shadow:0 8px 24px rgba(0,0,0,.42), inset 0 0 0 1px rgba(255,255,255,.07) !important;
+  overflow:hidden !important;
+  display:flex !important;
+  align-items:flex-end !important;
+  padding:0 !important;
+}
+.mp-side-gauge-fill{
+  width:100% !important;
+  height:0%;
+  min-height:0 !important;
+  border-radius:999px !important;
+  background:linear-gradient(0deg,#22c55e 0%,#65d66f 62%,#facc15 82%,#f97316 100%) !important;
+  box-shadow:0 -4px 16px rgba(34,197,94,.38) !important;
+  transition:height .16s ease-out, filter .16s ease-out, box-shadow .16s ease-out !important;
+}
+.mp-side-gauge-fill.high{
+  filter:brightness(1.2) saturate(1.18) !important;
+  box-shadow:0 0 24px rgba(34,197,94,.72),0 -8px 22px rgba(250,204,21,.34) !important;
+}
+.mp-side-gauge-label{
+  right:0 !important;
+  top:calc(50% - 148px) !important;
+  min-width:94px !important;
+  padding:0 !important;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  border-radius:0 !important;
+  text-align:center !important;
+  color:#f8fafc !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+  line-height:1.05 !important;
+  letter-spacing:-.02em !important;
+  white-space:nowrap !important;
+  text-shadow:0 2px 8px rgba(0,0,0,.72) !important;
+}
+.mp-side-gauge-label #mpPctText{
+  display:inline !important;
+  margin:0 0 0 5px !important;
+  font-size:28px !important;
+  line-height:1 !important;
+  font-weight:950 !important;
+  color:#22c55e !important;
+  text-shadow:0 0 14px rgba(34,197,94,.58),0 2px 8px rgba(0,0,0,.72) !important;
+}
+.mp-side-gauge-label .pct-unit{
+  display:inline !important;
+  margin-left:1px !important;
+  font-size:18px !important;
+  font-weight:950 !important;
+  color:#bbf7d0 !important;
+  vertical-align:baseline !important;
+}
+.mp-side-gauge-label.high #mpPctText{
+  color:#86efac !important;
+}
+.mp-side-gauge-label.low #mpPctText{
+  color:#fbbf24 !important;
+  text-shadow:0 0 12px rgba(251,191,36,.46),0 2px 8px rgba(0,0,0,.72) !important;
+}
+@media(max-width:520px){
+  .mp-side-gauge{
+    right:18px !important;
+    top:calc(50% + 10px) !important;
+    width:38px !important;
+    height:214px !important;
+  }
+  .mp-side-gauge-label{
+    right:-4px !important;
+    top:calc(50% - 132px) !important;
+    min-width:88px !important;
+    font-size:12px !important;
+  }
+  .mp-side-gauge-label #mpPctText{
+    font-size:25px !important;
+  }
+  .mp-side-gauge-label .pct-unit{
+    font-size:16px !important;
+  }
+}
+</style>
+<!-- V92_VALIDATION: 정확도 박스 테두리 제거, 정확도 0% 한 줄 표시, 게이지 위 배치, 90% 이상 시 게이지 100% 채움 CSS 보강. -->
 
 </body></html>
