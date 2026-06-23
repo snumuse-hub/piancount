@@ -19248,4 +19248,116 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
 </script>
 <!-- V103_VALIDATION: Plank 시간 운동에서는 수동 '세트 완료' 버튼을 제거하고, 타이머 종료 또는 '여기까지 기록하기'만 허용한다. -->
 
+
+<!-- ===== v104: 하체 AI 운동 선택 상태 동기화 ===== -->
+<script id="v104-lower-selection-sync-script">
+(function(){
+  'use strict';
+  if(window.__v104LowerSelectionSyncPatch) return;
+  window.__v104LowerSelectionSyncPatch = true;
+
+  function clean(v){return String(v==null?'':v).replace(/\s+/g,' ').trim();}
+  function lowerArray(){
+    try{
+      if(typeof sel !== 'undefined' && sel && Array.isArray(sel.l)) return sel.l;
+    }catch(e){}
+    return null;
+  }
+  function lowerName(card){
+    if(!card) return '';
+    var onclick=card.getAttribute('onclick')||'';
+    var m=onclick.match(/selEx\(this,\s*['"][cul]['"],\s*\d+,\s*['"]([^'"]+)['"]\)/);
+    if(m) return clean(m[1]);
+    var en=card.querySelector('.en');
+    if(en) return clean(en.innerText||en.textContent||'');
+    var img=card.querySelector('img');
+    return clean((img&&img.alt)||card.textContent||'');
+  }
+  function clearLowerCompletion(card){
+    if(!card) return;
+    card.classList.remove('completed');
+    var chip=card.querySelector('.completion-chip');
+    if(chip) chip.remove();
+  }
+  function setLowerArr(name){
+    var arr=lowerArray();
+    if(!arr) return;
+    arr.length=0;
+    if(name) arr.push(name);
+  }
+  function syncLowerSelection(clickedCard){
+    var grid=document.getElementById('lg');
+    var arr=lowerArray();
+    if(!grid || !arr) return;
+
+    var cards=Array.prototype.slice.call(grid.querySelectorAll('.ex-item'));
+    var selected=cards.filter(function(card){return card.classList.contains('sel');});
+
+    // 하체는 최대 1개만 가능하므로 화면에 여러 개가 선택되어 있으면 하나만 남긴다.
+    if(selected.length>1){
+      var keep=(clickedCard && clickedCard.classList && clickedCard.classList.contains('sel')) ? clickedCard : selected[0];
+      selected.forEach(function(card){
+        if(card!==keep){
+          card.classList.remove('sel');
+          clearLowerCompletion(card);
+        }
+      });
+      selected=[keep];
+    }
+
+    var screenName=selected.length ? lowerName(selected[0]) : '';
+    var storedName=arr.length ? clean(arr[0]) : '';
+
+    // 화면에는 선택 표시가 없는데 내부 배열에만 값이 남은 경우가 이번 오류의 원인이다.
+    // 이 경우 내부 선택값을 비워서 새 하체 종목을 다시 선택할 수 있게 한다.
+    if(!screenName && arr.length){
+      arr.length=0;
+      try{ if(typeof refreshItitles==='function') refreshItitles('l'); }catch(e){}
+      try{ if(typeof updateGoalModePanelVisibility==='function') updateGoalModePanelVisibility(); }catch(e){}
+      return;
+    }
+
+    // 화면 선택과 내부 선택값이 다르면 화면 기준으로 맞춘다.
+    if(screenName && storedName!==screenName){
+      setLowerArr(screenName);
+      try{ if(typeof refreshItitles==='function') refreshItitles('l'); }catch(e){}
+      try{ if(typeof updateGoalModePanelVisibility==='function') updateGoalModePanelVisibility(); }catch(e){}
+    }
+  }
+
+  var originalSelEx=window.selEx;
+  if(typeof originalSelEx==='function' && !originalSelEx.__v104LowerSyncWrapped){
+    var wrapped=function(el,g,max,name){
+      if(g==='l') syncLowerSelection(el);
+      var result=originalSelEx.apply(this,arguments);
+      if(g==='l') setTimeout(function(){syncLowerSelection(el);},0);
+      return result;
+    };
+    wrapped.__v104LowerSyncWrapped=true;
+    window.selEx=wrapped;
+  }
+
+  // 기존 AI 패치에서 화면 선택 표시는 지웠지만 내부 sel.l 값을 비우지 못하는 경우를 보정한다.
+  document.addEventListener('click',function(e){
+    var card=e.target && e.target.closest ? e.target.closest('#lg .ex-item') : null;
+    if(!card) return;
+    syncLowerSelection(card);
+  },true);
+
+  document.addEventListener('click',function(e){
+    if(e.target && e.target.closest && e.target.closest('.session-start-btn')){
+      setTimeout(function(){syncLowerSelection();},0);
+    }
+  },true);
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){syncLowerSelection();});
+  }else{
+    syncLowerSelection();
+  }
+  window.addEventListener('pageshow',function(){setTimeout(syncLowerSelection,0);});
+})();
+</script>
+<!-- V104_VALIDATION: 하체 운동 선택 표시와 내부 선택값(sel.l)을 동기화하여 선택 표시가 없는데 '최대 1가지' 팝업만 뜨는 문제를 방지한다. -->
+
 </body></html>
