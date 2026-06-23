@@ -16130,9 +16130,9 @@ document.addEventListener('DOMContentLoaded', function(){
 </style>
 
 
-<!-- V84_VALIDATION: MediaPipe module syntax fixed; mpVideo/mpCanvas/getUserMedia/PoseLandmarker present. -->
-<!-- ===== v84: 하체 수행평가 MediaPipe AI영상 실제 복구 + 시간목표/휴식넘어가기/빵빠레/랭킹 보강 ===== -->
-<style id="v84-lower-mediapipe-counter-style">
+<!-- V86_VALIDATION: 기존 시작 버튼 AI 연동 유지 + 중간 기록 저장 + 카메라 안내 팝업 + 시간목표/음향/각도 유지. -->
+<!-- ===== v86: 하체 AI 수행평가 중간기록 저장 + 부드러운 카메라 안내 ===== -->
+<style id="v86-lower-mediapipe-counter-style">
 #lg .ex-item[data-pose-counter="1"]{position:relative!important;outline:2px solid rgba(37,99,235,.35)!important;outline-offset:2px!important;}
 #lg .ex-item[data-pose-counter="1"] .pose-counter-badge{position:absolute!important;right:2px!important;bottom:2px!important;z-index:5;border-radius:999px;background:#1d4ed8;color:#fff;font-size:9px!important;font-weight:800;line-height:1;padding:4px 6px;box-shadow:0 2px 8px rgba(0,0,0,.18);white-space:nowrap;}
 .pose-completed-note{margin-top:8px;border:1px solid #bae6fd;background:#eff6ff;color:#1e3a8a;border-radius:10px;padding:8px 10px;font-size:12px;line-height:1.55;font-weight:600;}
@@ -16143,7 +16143,7 @@ document.addEventListener('DOMContentLoaded', function(){
 .mp-lower-title{flex:1;min-width:0;}
 .mp-lower-title b{display:block;font-size:16px;letter-spacing:-.03em;}
 .mp-lower-title span{display:block;margin-top:3px;font-size:11px;color:#cbd5e1;line-height:1.35;}
-.mp-lower-close{border:0;background:rgba(255,255,255,.09);color:#fff;width:34px;height:34px;border-radius:12px;font-size:22px;cursor:pointer;}
+.mp-lower-close{display:none!important;border:0;background:rgba(255,255,255,.09);color:#fff;width:34px;height:34px;border-radius:12px;font-size:22px;cursor:pointer;}
 .mp-stage{position:relative;width:100%;aspect-ratio:3/4;background:#020617;overflow:hidden;}
 .mp-stage video,.mp-stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
 .mp-stage.mirror video,.mp-stage.mirror canvas{transform:scaleX(-1);}
@@ -16152,7 +16152,7 @@ document.addEventListener('DOMContentLoaded', function(){
 .mp-angle-tag.right{color:#bbf7d0;}
 .mp-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:22px;background:radial-gradient(circle at 50% 15%,rgba(37,99,235,.22),transparent 38%),linear-gradient(160deg,#0f172a,#020617);z-index:3;}
 .mp-placeholder .main{font-size:20px;font-weight:900;line-height:1.25;margin-bottom:8px;}
-.mp-placeholder .sub{font-size:12px;color:#cbd5e1;line-height:1.55;margin-bottom:14px;}
+.mp-placeholder .sub{font-size:12px;color:#cbd5e1;line-height:1.65;margin-bottom:14px;word-break:keep-all;}
 .mp-camera-btn,.mp-action{border:0;border-radius:12px;padding:12px 14px;font-size:14px;font-weight:800;cursor:pointer;}
 .mp-camera-btn{background:#22c55e;color:#04130d;min-width:180px;}
 .mp-overlay-top{position:absolute;left:10px;right:10px;top:10px;display:flex;gap:8px;align-items:center;z-index:4;}
@@ -16191,6 +16191,7 @@ document.addEventListener('DOMContentLoaded', function(){
 .mp-guide{background:#0f172a;border:1px solid rgba(148,163,184,.22);border-radius:14px;padding:10px 11px;color:#e2e8f0;font-size:12px;line-height:1.65;margin-bottom:10px;word-break:keep-all;}
 .mp-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .mp-action.stop{background:#334155;color:#fff;}
+.mp-action.save{background:#22c55e;color:#04130d;}
 .mp-action.danger{background:#fee2e2;color:#991b1b;}
 .mp-toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:100000;background:#111827;color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:10px 14px;font-size:13px;font-weight:800;box-shadow:0 8px 30px rgba(0,0,0,.35);display:none;}
 .mp-toast.show{display:block;}
@@ -16201,7 +16202,7 @@ document.addEventListener('DOMContentLoaded', function(){
 @media(max-width:520px){.mp-lower-overlay{padding:0;align-items:stretch}.mp-lower-modal{width:100%;max-height:100vh;border-radius:0}.mp-stage{aspect-ratio:3/4}.mp-count .num{font-size:66px}.mp-side-gauge{height:190px}.mp-actions{grid-template-columns:1fr}.mp-placeholder .main{font-size:18px}}
 @media print{.mp-lower-overlay,.mp-toast,.pose-counter-badge{display:none!important;}}
 </style>
-<script type="module" id="v84-lower-mediapipe-counter-script">
+<script type="module" id="v86-lower-mediapipe-counter-script">
 import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
 (function(){
@@ -16307,6 +16308,25 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
         <div class="workout-done-icon">🎉</div>
         <div class="workout-done-title">${safe}님, 목표 세트와 ${targetWord}를 모두 완료했습니다.</div>
         <div class="workout-done-message">정확한 자세 수행이 기록되었습니다.<br><span class="ai-motivation">꾸준한 노력이 더 강한 나를 만듭니다.</span></div>
+        <div class="workout-done-close-note">10초 후 자동으로 닫힙니다. 화면을 누르면 바로 닫힙니다.</div>
+      </div>`;
+    document.body.appendChild(pop);
+    const close=()=>{ if(pop && pop.parentNode) pop.remove(); };
+    pop.addEventListener('click',close);
+    setTimeout(close,10000);
+  }
+
+  function showAIPartialPopup(studentName){
+    const old=document.getElementById('workoutDonePopup'); if(old) old.remove();
+    const pop=document.createElement('div');
+    pop.id='workoutDonePopup';
+    pop.className='workout-done-popup ai-partial-popup';
+    const safe=escapeHtml(studentName||'학생');
+    pop.innerHTML=`
+      <div class="workout-done-card">
+        <div class="workout-done-icon">💪</div>
+        <div class="workout-done-title">운동은 시작이 반입니다.</div>
+        <div class="workout-done-message">${safe}님, 여기까지 수행한 정확한 자세 기록이 저장되었습니다.<br>오늘의 도전도 충분히 의미 있는 기록입니다.<br><span class="ai-motivation">꾸준한 노력이 더 강한 나를 만듭니다.</span></div>
         <div class="workout-done-close-note">10초 후 자동으로 닫힙니다. 화면을 누르면 바로 닫힙니다.</div>
       </div>`;
     document.body.appendChild(pop);
@@ -16427,9 +16447,9 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
           <div class="mp-angle-tag left" id="mpAngleL">왼 0°</div>
           <div class="mp-angle-tag right" id="mpAngleR">오 0°</div>
           <div class="mp-placeholder" id="mpPlaceholder">
-            <div class="main">카메라로 자세를 확인합니다</div>
-            <div class="sub">전신이 화면에 들어오게 1.5~2m 떨어지고<br>옆모습 또는 약간 비스듬한 자세로 시작하세요.</div>
-            <button type="button" class="mp-camera-btn" id="mpCameraBtn">📷 카메라 시작</button>
+            <div class="main">📷 AI 자세 측정을 시작합니다</div>
+            <div class="sub">정확한 자세를 인식하기 위해 카메라 사용이 필요합니다.<br>카메라 영상은 자세 분석에만 사용되며, 별도로 저장되지 않습니다.<br><br>화면에 전신이 잘 보이도록 서 주세요.<br>준비가 되면 카메라를 허용해 주세요.</div>
+            <button type="button" class="mp-camera-btn" id="mpCameraBtn">카메라 시작하기</button>
           </div>
           <div class="mp-overlay-top"><span class="mp-pill" id="mpStatus">⚪ 준비 중</span><span class="mp-pill" id="mpPhase">자세: -</span><button type="button" class="mp-flip" id="mpFlipBtn">카메라 전환</button></div>
           <div class="mp-count"><div class="num"><span id="mpRep">0</span></div><div class="target" id="mpTargetLine">/ <span id="mpTarget">0</span>회</div><div class="mp-work-time" id="mpWorkTime" style="display:none;">00:00</div></div>
@@ -16439,18 +16459,18 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
         <div class="mp-body">
           <div class="mp-stats"><div class="mp-stat"><small>현재 세트</small><b><span id="mpSet">1</span>/<span id="mpSets">1</span></b></div><div class="mp-stat"><small>무릎 각도</small><b><span id="mpAngle">--</span>°</b></div><div class="mp-stat"><small>인정 합계</small><b><span id="mpTotal">0</span>회</b></div></div>
           <div class="mp-guide" id="mpGuide">자세 안내</div>
-          <div class="mp-actions"><button type="button" class="mp-action stop" id="mpStopBtn">카메라 중지</button><button type="button" class="mp-action danger" id="mpCancelBtn">완료하지 않고 닫기</button></div>
+          <div class="mp-actions"><button type="button" class="mp-action stop" id="mpStopBtn">카메라 일시중지</button><button type="button" class="mp-action save" id="mpSavePartialBtn">여기까지 기록하기</button></div>
         </div>
       </div>`;
     document.body.appendChild(overlay);
     video=$('mpVideo'); canvas=$('mpCanvas'); ctx=canvas.getContext('2d');
-    $('mpCloseBtn').addEventListener('click',()=>closeCounter(false));
-    $('mpCancelBtn').addEventListener('click',()=>closeCounter(false));
+    $('mpCloseBtn').addEventListener('click',()=>savePartialRecord());
+    $('mpSavePartialBtn').addEventListener('click',savePartialRecord);
     $('mpStopBtn').addEventListener('click',stopCamera);
     $('mpCameraBtn').addEventListener('click',startCamera);
     $('mpFlipBtn').addEventListener('click',switchCamera);
     $('mpRestSkipBtn').addEventListener('click',skipRest);
-    overlay.addEventListener('click',(e)=>{ if(e.target===overlay) closeCounter(false); });
+    overlay.addEventListener('click',(e)=>{ if(e.target===overlay) toast('종료하려면 아래의 여기까지 기록하기 버튼을 눌러주세요.'); });
     return overlay;
   }
 
@@ -16489,7 +16509,7 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     $('mpGuide').textContent=guideFor(name);
     $('mpSets').textContent=sets; $('mpSet').textContent='1'; $('mpTarget').textContent=reps;
     $('mpRep').textContent='0'; $('mpTotal').textContent='0'; $('mpAngle').textContent='--'; $('mpPctText').textContent='0'; $('mpGauge').style.height='0%';
-    $('mpPhase').textContent='자세: 카메라 대기'; $('mpStatus').textContent='📷 카메라 시작 필요';
+    $('mpPhase').textContent='자세: 카메라 대기'; $('mpStatus').textContent='📷 카메라 안내 확인';
     $('mpPlaceholder').style.display='flex'; $('mpRest').classList.remove('show');
     if(goalMode==='time'){
       $('mpTargetLine').textContent='시간 목표 중 인정 횟수';
@@ -16499,11 +16519,10 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
       $('mpTargetLine').innerHTML='/ <span id="mpTarget">'+reps+'</span>회';
       $('mpWorkTime').style.display='none';
     }
-    $('mpCameraBtn').disabled=false; $('mpCameraBtn').textContent='📷 카메라 시작';
+    $('mpCameraBtn').disabled=false; $('mpCameraBtn').textContent='카메라 시작하기';
     $('mpStage').classList.toggle('mirror',facingMode==='user');
     overlay.classList.add('show');
-    // 운동 시작 버튼 클릭이라는 사용자 제스처 안에서 바로 카메라와 오디오를 준비합니다.
-    startCamera();
+    // 브라우저 권한창 전에 앱 안에서 부드러운 안내를 먼저 보여줍니다.
     return true;
   }
 
@@ -16555,7 +16574,7 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     hideAngleTags();
     $('mpStatus') && ($('mpStatus').textContent='⏸ 카메라 중지');
     $('mpPlaceholder') && ($('mpPlaceholder').style.display='flex');
-    $('mpCameraBtn') && ($('mpCameraBtn').disabled=false, $('mpCameraBtn').textContent='📷 다시 시작');
+    $('mpCameraBtn') && ($('mpCameraBtn').disabled=false, $('mpCameraBtn').textContent='카메라 다시 시작하기');
   }
   function closeCounter(completed){
     if(state && state.restTimer){clearInterval(state.restTimer); state.restTimer=null;}
@@ -16757,40 +16776,65 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     $('mpStatus').textContent='🟢 다음 세트 분석 중';
     if(state.goalMode==='time') startWorkTimer();
   }
-  function finishAll(){
-    if(!state) return;
+  function actualSetsForRecord(completed){
+    if(!state) return 0;
+    if(completed) return state.sets;
+    const completedSets = Array.isArray(state.history) ? state.history.length : 0;
+    const includeCurrent = (!state.resting && state.rep>0) ? 1 : 0;
+    return Math.max(1, Math.min(state.sets, completedSets + includeCurrent));
+  }
+  function recordAIResult(completed){
+    if(!state) return null;
     clearWorkTimer();
     const avg=state.accSamples.length ? Math.round(state.accSamples.reduce((a,b)=>a+b,0)/state.accSamples.length) : 0;
     const total=state.total;
     const isTime=state.goalMode==='time';
-    const summary = isTime
-      ? (KO[state.name]||state.name)+' '+state.sets+'세트 × '+formatClock(state.workSeconds)+', 인정 합계 '+total+'회, 평균 정확도 '+avg+'%'
-      : (KO[state.name]||state.name)+' '+state.sets+'세트 × '+state.target+'회, 인정 합계 '+total+'회, 평균 정확도 '+avg+'%';
+    const recordSets=actualSetsForRecord(completed);
+    const title=(KO[state.name]||state.name);
+    const summary = completed
+      ? (isTime
+          ? title+' '+state.sets+'세트 × '+formatClock(state.workSeconds)+', 인정 합계 '+total+'회, 평균 정확도 '+avg+'%'
+          : title+' '+state.sets+'세트 × '+state.target+'회, 인정 합계 '+total+'회, 평균 정확도 '+avg+'%')
+      : (isTime
+          ? title+' 중간 기록: '+recordSets+'세트 도전, 시간 목표 '+formatClock(state.workSeconds)+', 현재 인정 합계 '+total+'회, 평균 정확도 '+avg+'%'
+          : title+' 중간 기록: '+recordSets+'세트 도전, 현재 인정 합계 '+total+'회, 평균 정확도 '+avg+'%');
     if(state.card) state.card.classList.add('completed');
     if(state.block){
       state.block.classList.add('session-done');
       let note=state.block.querySelector('.pose-completed-note');
       if(!note){note=document.createElement('div'); note.className='pose-completed-note'; state.block.appendChild(note);}
-      note.textContent='AI 자세 카운터 완료: '+summary;
+      note.textContent=(completed?'AI 자세 카운터 완료: ':'AI 자세 카운터 중간 저장: ')+summary;
     }
     const l1s=$('l1s'), l1r=$('l1r'), lf=$('lf1');
-    if(l1s) l1s.value=state.sets;
-    // 시간 목표일 때도 제출/전교랭킹 집계가 기존 개수 필드(l1r)를 기준으로 동작하므로,
-    // 목표 횟수가 아니라 AI가 정확한 자세로 인정한 총 개수를 l1r에 저장합니다.
-    if(l1r) l1r.value = isTime ? total : state.target;
+    if(l1s) l1s.value = completed ? state.sets : 1;
+    // 중간 저장 또는 시간 목표는 목표 개수가 아니라 실제 인정 총개수를 기록값으로 남깁니다.
+    if(l1r) l1r.value = (completed && !isTime) ? state.target : total;
     if(lf){
-      const line='[AI자세카운터] '+summary;
-      if(!lf.value.includes('[AI자세카운터]')) lf.value=(lf.value.trim()?lf.value.trim()+'\n':'')+line;
-      else lf.value=lf.value.replace(/\[AI자세카운터\].*/g,line);
+      const tag=completed?'[AI자세카운터]':'[AI자세카운터-중간저장]';
+      const line=tag+' '+summary;
+      if(!/\[AI자세카운터(?:-중간저장)?\]/.test(lf.value)) lf.value=(lf.value.trim()?lf.value.trim()+'\n':'')+line;
+      else lf.value=lf.value.replace(/\[AI자세카운터(?:-중간저장)?\].*/g,line);
     }
     if(typeof window.updateMainWorkoutProgress==='function') window.updateMainWorkoutProgress();
-    if(typeof window.showConfetti==='function'){try{window.showConfetti('하체 AI 평가 완료');}catch(e){}}
-    const studentName=getStudentDisplayName();
-    const goalMode=state.goalMode;
-    toast('하체 수행평가 기록이 자동 반영되었습니다.');
+    if(typeof window.showConfetti==='function'){try{window.showConfetti(completed?'하체 AI 평가 완료':'하체 AI 중간 기록 저장');}catch(e){}}
+    toast(completed?'하체 수행평가 기록이 자동 반영되었습니다.':'여기까지 수행한 기록이 자동 반영되었습니다.');
+    return {studentName:getStudentDisplayName(), goalMode:state.goalMode, total, summary};
+  }
+  function savePartialRecord(){
+    if(!state) return;
+    const info=recordAIResult(false);
+    if(!info) return;
+    prepareAudio();
+    playSetSuccess();
+    setTimeout(()=>{closeCounter(true); showAIPartialPopup(info.studentName);},180);
+  }
+  function finishAll(){
+    if(!state) return;
+    const info=recordAIResult(true);
+    if(!info) return;
     prepareAudio();
     playGoalFanfare();
-    setTimeout(()=>{closeCounter(true); showAIGoalPopup(studentName, goalMode);},180);
+    setTimeout(()=>{closeCounter(true); showAIGoalPopup(info.studentName, info.goalMode);},180);
   }
 
   document.addEventListener('click', function(e){
