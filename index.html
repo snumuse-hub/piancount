@@ -17035,7 +17035,7 @@ import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@med
     }
     $('mpAngle').textContent=r.angle==null?'--':String(r.angle);
     $('mpPhase').textContent='자세: '+(r.lost ? (r.msg||'인식 약함') : r.label);
-    $('mpStatus').textContent=r.lost ? '🟡 '+(r.msg||'인식 약함') : (pct>=70?'🟢 인정 가능':'🟠 자세 보정');
+    $('mpStatus').textContent=r.lost ? '🟡 '+(r.msg||'인식 약함') : (rawPct>=70?'🟢 인정 가능':'🟠 자세 보정');
   }
   function clearWorkTimer(){
     if(state && state.workTimer){clearInterval(state.workTimer); state.workTimer=null;}
